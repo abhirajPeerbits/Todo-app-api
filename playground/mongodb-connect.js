@@ -21,7 +21,7 @@ MongoClient.connect('mongodb://localhost:27017/TodoApp',(error,client) => {
 
  //  db.collection('Todos').insertOne({},(error,result)=>{})
 
-   db.collection('Todos').insertOne({
+   db.collection('todos').insertOne({
        text : 'something do',
        completed : false
 
