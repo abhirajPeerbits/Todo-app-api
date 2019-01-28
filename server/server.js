@@ -11,7 +11,7 @@ var {User} = require('./models/user');
 var app = express();
 app.use(bodyParser.json());
 
-
+//post data in database
 app.post('/todos',(req,res)=>{
     console.log(req.body);  
     var todo = new Todo({
@@ -20,7 +20,7 @@ app.post('/todos',(req,res)=>{
 
     todo.save().then((docs)=>{
         console.log(`data save sucess fully ${docs}`);
-        res.send(docs);
+        res.status(200).send(docs);
     },(error)=>{
         console.log(`error is -> ${error}`);
         res.status(400).send(e);
@@ -28,7 +28,18 @@ app.post('/todos',(req,res)=>{
     
 });
 
+//get data from data base
 
+app.get('/todos', (req,res) => {
+    Todo.find().then(
+                (todos)=>
+                {
+                    res.send({todos});
+                },
+                (error)=>{
+                    res.send.status(400).send(error);
+                });
+});
 
 
 app.listen(3000,() => {
