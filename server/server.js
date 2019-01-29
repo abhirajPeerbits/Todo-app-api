@@ -1,7 +1,7 @@
 const express  = require('express');
 const bodyParser = require('body-parser');
 const {ObjectID} = require('mongodb');
-
+const _ = require('lodash');
 
 var {mongoose} = require('./db/mongoos');
 var {Todo} = require('./models/todo');
@@ -53,17 +53,16 @@ app.get('/todos/:id',(req,res) => {
     if(!ObjectID.isValid(id)){
         return res.status(400).send('object id is not valid');
     }else{
-        return res.status(200).send('object id is  valid');
-        
-    }
-    
-    Todo.findById(id)
+        //return res.status(200).send('object id is  valid');
+
+        Todo.findById(id)
         .then(  (todo)=>
                     {
                         if(!todo){
                             return res.status(404).send("404 id not found");    
                         }
-                        res.send({todo});
+                       return  res.status(200).send({todo});
+                       
                     },
                 (error)=>
                     {   
@@ -73,8 +72,12 @@ app.get('/todos/:id',(req,res) => {
                     {
                         res.status(400).send('bad request'+error);
                     });
-    
         
+    }
+    
+   
+    
+         
     
 });
 
@@ -84,11 +87,8 @@ app.delete('/Todos/:id',(req,res)=> {
     if(!ObjectID.isValid(id)){
       return res.status(400).send('object id is not valid');
     }else{
-        return res.status(200).send('object id is  valid');
-        
-    }
-
-    Todo.findByIdAndRemove(id)
+        // return res.status(200).send('object id is  valid');
+        Todo.findByIdAndRemove(id)
         .then(  (todo)=>
                     {
                         if(!todo){
@@ -105,6 +105,55 @@ app.delete('/Todos/:id',(req,res)=> {
                     {
                         res.status(400).send('bad request'+error);
                     });
+    }
+
+    
+});
+
+
+app.patch('/todos/:id',(req,res) => {
+    let id = req.params.id;
+    // body veriable :it is use for pull data 
+    // only user can update 'text' and 'completed' property in todo model
+    // other property can not update only this two property can update by user.
+    var body = _.pick(req.body,['text','complated']);
+
+
+    if(!ObjectID.isValid(id)){
+        return res.status(400).send('object id is not valid');
+      }
+      else{
+        //   return res.status(200).send('object id is  valid');
+        if(_.isBoolean(body.complated) && body.complated) {
+            //if  complated property is boolean AND it is TRUE.
+            body.complatedAt = new Date().getTime(); 
+        }
+        else{
+            body.complated = false;
+            body.complatedAt = null;
+        }
+    
+        Todo.findByIdAndUpdate(id,{$set:body},{new:true})
+            .then(  (todo) => 
+                    {
+                        if(!todo){
+                            return res.status(404).send("404 id not found");    
+                        }
+                        console.log(`check update or not : ->  ${todo}` );
+                        
+                       return  res.send({todo});
+                        // OR res.send({todo : todo});
+                        
+                    }, 
+                    (error)=> 
+                    {
+                        return res.send(error);
+                    })
+            .catch((error) => {res.status(400).send('bad request'+error);}); 
+        }
+     
+    
+
 });
 
 app.listen(port,() => {
