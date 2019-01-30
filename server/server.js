@@ -6,7 +6,7 @@ const _ = require('lodash');
 var {mongoose} = require('./db/mongoos');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
- 
+var {authenticate} = require('./middleware/authenticate');
  
 
 var app = express();
@@ -102,6 +102,15 @@ app.get('/todos/:id',(req,res) => {
          
     
 });
+
+
+app.get('/users/me', authenticate, (req, res) => {
+    // 8.5
+    // middle were modify req. object here we recive req.  from middle were 
+    // so we put that req.user here 
+    res.send(req.user);
+  });
+  
 
 app.delete('/Todos/:id',(req,res)=> {
     let id  = req.params.id;
