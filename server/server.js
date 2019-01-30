@@ -32,6 +32,28 @@ app.post('/todos',(req,res)=>{
     
 });
 
+app.post('/user',(req,res) => {
+    
+    var body = _.pick(req.body,['email','password']);
+    var user = new User(body);
+    // OR    
+    // var user = new User({
+    //     email : req.body.email,
+    //     password : req.body.password,
+    //     tokens : req.body.tokens
+    // });
+ 
+    
+    user.save()
+        .then((user) => {return user.generateAuthToken();})
+        .then((token) => {res.header('x-auth',token).send(user);})
+        .catch((error) => {res.status(400).send(error);});    
+
+    // user.save().then(   (user)=>{res.status(200).send(user)},
+    //                     (error)=>{res.status(400).send(error)})
+    //             .catch((error) => {res.status(400).send(error)});
+});
+
 //get data from data base
 
 app.get('/todos', (req,res) => {
@@ -56,7 +78,7 @@ app.get('/todos/:id',(req,res) => {
         //return res.status(200).send('object id is  valid');
 
         Todo.findById(id)
-        .then(  (todo)=>
+        .then(  (todo) =>
                     {
                         if(!todo){
                             return res.status(404).send("404 id not found");    
@@ -145,7 +167,7 @@ app.patch('/todos/:id',(req,res) => {
                         // OR res.send({todo : todo});
                         
                     }, 
-                    (error)=> 
+                    (error) => 
                     {
                         return res.send(error);
                     })
