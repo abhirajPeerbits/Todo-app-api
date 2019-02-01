@@ -84,22 +84,14 @@ app.delete('/users/me/token',authenticate,(req,res) => {
 
 
 
-  app.get('/todos', (req,res) => {
-    Todo.find().then(
-                (todos)=>
-                {
-                    res.send({todos});
-                },
-                (error)=>{
-                    res.send.status(400).send(error);
-                });
-});
+
 
 //post data in database
-app.post('/todos',(req,res)=>{
+app.post('/todos',authenticate,(req,res)=>{
     console.log(req.body);  
     var todo = new Todo({
-        text : req.body.text
+        text : req.body.text,
+        _creator : req.user._id
     });
 
     todo.save().then((docs)=>{
@@ -112,8 +104,21 @@ app.post('/todos',(req,res)=>{
     
 });
 
+app.get('/todos',authenticate, (req,res) => {
+    // here we need todo according to user id 
+    // [find({_creator : req.user._id})] : here we get user object from "Authentication" meddlewere and it  match with _creator then it return todo other wise not return.
+    // here we use Direct TOdo schema and _creator is object of it so we compaire with _creator. 
+    Todo.find({_creator : req.user._id}).then(
+                (todos)=>
+                {
+                    res.send({todos});
+                },
+                (error)=>{
+                    res.send.status(400).send(error);
+                });
+});
 
- app.get('/todos/:id',(req,res) => {
+ app.get('/todos/:id',authenticate,(req,res) => {
     
     let id  = req.params.id;
     
@@ -121,8 +126,9 @@ app.post('/todos',(req,res)=>{
         return res.status(400).send('object id is not valid');
     }else{
         //return res.status(200).send('object id is  valid');
+        // if Todoid [ _id] and creator id [req.user._id] both same then show todo data
 
-        Todo.findById(id)
+        Todo.findOne({_id : id,_creator : req.user._id})
         .then(  (todo) =>
                     {
                         if(!todo){
@@ -148,14 +154,14 @@ app.post('/todos',(req,res)=>{
     
 });  
 
-app.delete('/Todos/:id',(req,res)=> {
+app.delete('/Todos/:id',authenticate,(req,res)=> {
     let id  = req.params.id;
     
     if(!ObjectID.isValid(id)){
       return res.status(400).send('object id is not valid');
     }else{
         // return res.status(200).send('object id is  valid');
-        Todo.findByIdAndRemove(id)
+        Todo.findOneAndRemove({_id : id , _creator: req.user._id})
         .then(  (todo)=>
                     {
                         if(!todo){
@@ -178,7 +184,7 @@ app.delete('/Todos/:id',(req,res)=> {
 });
 
 
-app.patch('/todos/:id',(req,res) => {
+app.patch('/todos/:id',authenticate,(req,res) => {
     let id = req.params.id;
     // body veriable :it is use for pull data 
     // only user can update 'text' and 'completed' property in todo model
@@ -200,7 +206,7 @@ app.patch('/todos/:id',(req,res) => {
             body.complatedAt = null;
         }
     
-        Todo.findByIdAndUpdate(id,{$set:body},{new:true})
+        Todo.findOneAndUpdate({_id : id , _creator : req.user._id},{$set:body},{new:true})
             .then(  (todo) => 
                     {
                         if(!todo){

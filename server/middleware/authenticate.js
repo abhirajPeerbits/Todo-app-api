@@ -4,6 +4,9 @@ var {User} = require('../models/user');
 
 
 var authenticate = (req, res, next) => {
+
+  // when we use this middlewere we verify token 
+  // we find user according to token using [findByToken(token)] it return us user which have same token
   // 8.5
   var token = req.header('x-auth');
 
