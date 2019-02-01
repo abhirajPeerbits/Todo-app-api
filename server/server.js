@@ -14,26 +14,12 @@ app.use(bodyParser.json());
 
 const port = process.env.PORT || 3000;
 
+// ================================== !!!!! USER !!!!! ====================================
 
-//post data in database
-app.post('/todos',(req,res)=>{
-    console.log(req.body);  
-    var todo = new Todo({
-        text : req.body.text
-    });
-
-    todo.save().then((docs)=>{
-        console.log(`data save sucess fully ${docs}`);
-        res.status(200).send(docs);
-    },(error)=>{
-        console.log(`error is -> ${error}`);
-        res.status(400).send(e);
-    });
-    
-});
 
 app.post('/user',(req,res) => {
     
+    // pick(where you need to pick,[what you need to pick]);
     var body = _.pick(req.body,['email','password']);
     var user = new User(body);
     // OR    
@@ -54,9 +40,51 @@ app.post('/user',(req,res) => {
     //             .catch((error) => {res.status(400).send(error)});
 });
 
-//get data from data base
+app.post('/user/login', (req,res) => {
+    // this fuction for login user and check user are valid or not 
+    // when user go to login this function generate token and one copy save in DB and one send 
+    // to user in a header part
+    var body = _.pick(req.body,['email','password']);
 
-app.get('/todos', (req,res) => {
+    User.findByCridential(body.email,body.password)
+        .then((user) => {
+            return user.generateAuthToken()
+                        .then((token) => {res.header('x-auth',token).send(user)});
+        })
+        .catch((error) => { res.status(400).send('password wrong')});
+
+});
+
+
+app.get('/users/me', authenticate, (req, res) => {
+    // 8.5
+    // middle were modify req. object here we recive req.  from middle were 
+    // so we put that req.user here 
+    res.send(req.user);
+  });
+
+app.delete('/users/me/token',authenticate,(req,res) => {
+    // this function delete token
+    console.log(`01-02-19-> `+req.token);
+    
+    req.user.removeToken(req.token)
+            .then(() => 
+                        {
+                            res.status(200).send();
+                        },
+                  () =>
+                        {
+                            res.status(400).send();
+                        });
+
+});
+
+
+// ================================== !!!!! TODO !!!!! ====================================
+
+
+
+  app.get('/todos', (req,res) => {
     Todo.find().then(
                 (todos)=>
                 {
@@ -67,8 +95,25 @@ app.get('/todos', (req,res) => {
                 });
 });
 
+//post data in database
+app.post('/todos',(req,res)=>{
+    console.log(req.body);  
+    var todo = new Todo({
+        text : req.body.text
+    });
 
-app.get('/todos/:id',(req,res) => {
+    todo.save().then((docs)=>{
+        console.log(`data save sucess fully ${docs}`);
+        res.status(200).send(docs);
+    },(error)=>{
+        console.log(`error is -> ${error}`);
+        res.status(400).send(e);
+    });
+    
+});
+
+
+ app.get('/todos/:id',(req,res) => {
     
     let id  = req.params.id;
     
@@ -101,16 +146,7 @@ app.get('/todos/:id',(req,res) => {
     
          
     
-});
-
-
-app.get('/users/me', authenticate, (req, res) => {
-    // 8.5
-    // middle were modify req. object here we recive req.  from middle were 
-    // so we put that req.user here 
-    res.send(req.user);
-  });
-  
+});  
 
 app.delete('/Todos/:id',(req,res)=> {
     let id  = req.params.id;
@@ -186,6 +222,9 @@ app.patch('/todos/:id',(req,res) => {
     
 
 });
+
+
+
 
 app.listen(port,() => {
     console.log(`started on port ${port}`);
