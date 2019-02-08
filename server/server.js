@@ -7,10 +7,10 @@ var {mongoose} = require('./db/mongoos');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 var {authenticate} = require('./middleware/authenticate');
- 
+
 
 var app = express();
-app.use(bodyParser.json());
+  app.use(bodyParser.json());
 
 const port = process.env.PORT || 3000;
 
@@ -18,22 +18,22 @@ const port = process.env.PORT || 3000;
 
 
 app.post('/user',(req,res) => {
-    
+
     // pick(where you need to pick,[what you need to pick]);
     var body = _.pick(req.body,['email','password']);
     var user = new User(body);
-    // OR    
+    // OR
     // var user = new User({
     //     email : req.body.email,
     //     password : req.body.password,
     //     tokens : req.body.tokens
     // });
- 
-    
+
+
     user.save()
         .then((user) => {return user.generateAuthToken();})
         .then((token) => {res.header('x-auth',token).send(user);})
-        .catch((error) => {res.status(400).send(error);});    
+        .catch((error) => {res.status(400).send(error);});
 
     // user.save().then(   (user)=>{res.status(200).send(user)},
     //                     (error)=>{res.status(400).send(error)})
@@ -41,8 +41,8 @@ app.post('/user',(req,res) => {
 });
 
 app.post('/user/login', (req,res) => {
-    // this fuction for login user and check user are valid or not 
-    // when user go to login this function generate token and one copy save in DB and one send 
+    // this fuction for login user and check user are valid or not
+    // when user go to login this function generate token and one copy save in DB and one send
     // to user in a header part
     var body = _.pick(req.body,['email','password']);
 
@@ -56,19 +56,57 @@ app.post('/user/login', (req,res) => {
 });
 
 
+
+// app.get('/usersList', (req, res)  => {
+//     User.find({}, (err, users) =>  {
+//       var userMap = {};
+//
+//       users.forEach((user) =>  {
+//         userMap[user._id] = user;
+//       });
+//
+//       res.send(userMap);
+//       console.log(userMap);
+//
+//     });
+//   });
+
+app.get('/usersList', (req, res)  => {
+    //http://localhost:3000/usersList?pageNo=1&size=5
+
+    var query =  pagination(req,res);
+    console.log();
+
+    User.find({},{},query)
+        .then((users) => {
+            var userMap = {};
+
+            users.forEach((user) =>  {
+              userMap[user._id] = user;
+            });
+
+            res.send(userMap);
+            console.log(userMap);
+          })
+        .catch((error) => {
+            res.status(404).send(error);
+        });
+  });
+
+
 app.get('/users/me', authenticate, (req, res) => {
     // 8.5
-    // middle were modify req. object here we recive req.  from middle were 
-    // so we put that req.user here 
+    // middle were modify req. object here we recive req.  from middle were
+    // so we put that req.user here
     res.send(req.user);
   });
 
 app.delete('/users/me/token',authenticate,(req,res) => {
     // this function delete token
     console.log(`01-02-19-> `+req.token);
-    
+
     req.user.removeToken(req.token)
-            .then(() => 
+            .then(() =>
                         {
                             res.status(200).send();
                         },
@@ -88,7 +126,7 @@ app.delete('/users/me/token',authenticate,(req,res) => {
 
 //post data in database
 app.post('/todos',authenticate,(req,res)=>{
-    console.log(req.body);  
+    console.log(req.body);
     var todo = new Todo({
         text : req.body.text,
         _creator : req.user._id
@@ -101,13 +139,13 @@ app.post('/todos',authenticate,(req,res)=>{
         console.log(`error is -> ${error}`);
         res.status(400).send(e);
     });
-    
+
 });
 
 app.get('/todos',authenticate, (req,res) => {
-    // here we need todo according to user id 
+    // here we need todo according to user id
     // [find({_creator : req.user._id})] : here we get user object from "Authentication" meddlewere and it  match with _creator then it return todo other wise not return.
-    // here we use Direct TOdo schema and _creator is object of it so we compaire with _creator. 
+    // here we use Direct TOdo schema and _creator is object of it so we compaire with _creator.
     Todo.find({_creator : req.user._id}).then(
                 (todos)=>
                 {
@@ -119,9 +157,9 @@ app.get('/todos',authenticate, (req,res) => {
 });
 
  app.get('/todos/:id',authenticate,(req,res) => {
-    
+
     let id  = req.params.id;
-    
+
     if(!ObjectID.isValid(id)){
         return res.status(400).send('object id is not valid');
     }else{
@@ -132,31 +170,31 @@ app.get('/todos',authenticate, (req,res) => {
         .then(  (todo) =>
                     {
                         if(!todo){
-                            return res.status(404).send("404 id not found");    
+                            return res.status(404).send("404 id not found");
                         }
                        return  res.status(200).send({todo});
-                       
+
                     },
                 (error)=>
-                    {   
+                    {
                         res.status(404).send('not found'+error);
                     })
         .catch((error)=>
                     {
                         res.status(400).send('bad request'+error);
                     });
-        
+
     }
-    
-   
-    
-         
-    
-});  
+
+
+
+
+
+});
 
 app.delete('/Todos/:id',authenticate,(req,res)=> {
     let id  = req.params.id;
-    
+
     if(!ObjectID.isValid(id)){
       return res.status(400).send('object id is not valid');
     }else{
@@ -165,13 +203,13 @@ app.delete('/Todos/:id',authenticate,(req,res)=> {
         .then(  (todo)=>
                     {
                         if(!todo){
-                            return res.status(404).send("404 id not found");    
+                            return res.status(404).send("404 id not found");
                         }
                         res.send({todo});
                            res.send('data deleted.. !');
                     },
                 (error)=>
-                    {   
+                    {
                         res.status(404).send('not found'+error);
                     })
         .catch((error)=>
@@ -180,13 +218,13 @@ app.delete('/Todos/:id',authenticate,(req,res)=> {
                     });
     }
 
-    
+
 });
 
 
 app.patch('/todos/:id',authenticate,(req,res) => {
     let id = req.params.id;
-    // body veriable :it is use for pull data 
+    // body veriable :it is use for pull data
     // only user can update 'text' and 'completed' property in todo model
     // other property can not update only this two property can update by user.
     var body = _.pick(req.body,['text','complated']);
@@ -199,33 +237,33 @@ app.patch('/todos/:id',authenticate,(req,res) => {
         //   return res.status(200).send('object id is  valid');
         if(_.isBoolean(body.complated) && body.complated) {
             //if  complated property is boolean AND it is TRUE.
-            body.complatedAt = new Date().getTime(); 
+            body.complatedAt = new Date().getTime();
         }
         else{
             body.complated = false;
             body.complatedAt = null;
         }
-    
+
         Todo.findOneAndUpdate({_id : id , _creator : req.user._id},{$set:body},{new:true})
-            .then(  (todo) => 
+            .then(  (todo) =>
                     {
                         if(!todo){
-                            return res.status(404).send("404 id not found");    
+                            return res.status(404).send("404 id not found");
                         }
                         console.log(`check update or not : ->  ${todo}` );
-                        
+
                        return  res.send({todo});
                         // OR res.send({todo : todo});
-                        
-                    }, 
-                    (error) => 
+
+                    },
+                    (error) =>
                     {
                         return res.send(error);
                     })
-            .catch((error) => {res.status(400).send('bad request'+error);}); 
+            .catch((error) => {res.status(400).send('bad request'+error);});
         }
-     
-    
+
+
 
 });
 
@@ -234,7 +272,5 @@ app.patch('/todos/:id',authenticate,(req,res) => {
 
 app.listen(port,() => {
     console.log(`started on port ${port}`);
-    
+
 });
-
-
